@@ -37,3 +37,4 @@ VITE_RAZORPAY_KEY=rzp_test_demo_key
 
 The app is structured so pages only call endpoint helpers from `src/api/endpoints.js`, while the `axios.js` and `mockApi.js` layers are isolated behind that contract.
 
+
