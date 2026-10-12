@@ -1,0 +1,11 @@
+backend/target/
+frontend/
+frontend-mock/
+.git/
+backend/.env
+backend/.mvn/
+backend/.settings/
+backend/.classpath
+backend/.project
+*.cmd
+backend/HELP.md
