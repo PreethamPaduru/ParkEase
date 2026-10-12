@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../api/axios';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,8 +15,8 @@ export default function Login() {
 
   const onSubmit = async (values) => {
     try {
-      const response = await axios.post(
-        'http://localhost:9091/parking/login',
+      const response = await api.post(
+        '/parking/login',
         {
           email: values.email,
           password: values.password,

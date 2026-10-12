@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:9091/';
+const rawBaseURL = import.meta.env.VITE_API_URL || 'https://parkease-b5lo.onrender.com';
+const baseURL = rawBaseURL.replace(/\/+$/, '');
 
 const api = axios.create({
   baseURL,

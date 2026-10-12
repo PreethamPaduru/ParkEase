@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../api/axios';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -19,8 +19,8 @@ export default function Register() {
 
   const onSubmit = async (values) => {
     try {
-      const response = await axios.post(
-        'http://localhost:9091/parking/register',
+      const response = await api.post(
+        '/parking/register',
         {
           name: values.name,
           phone: values.phone,
