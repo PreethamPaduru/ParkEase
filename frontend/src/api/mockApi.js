@@ -1,30 +1,3 @@
-const demoUsers = {
-  'seeker@demo.com': {
-    id: 'u-seeker',
-    name: 'Aarav Sharma',
-    email: 'seeker@demo.com',
-    phone: '+91 98765 43210',
-    role: 'SEEKER',
-    password: 'seeker@demo.com',
-  },
-  'provider@demo.com': {
-    id: 'u-providerq  ',
-    name: 'Megha Reddy',
-    email: 'provider@demo.com',
-    phone: '+91 91234 56789',
-    role: 'PROVIDER',
-    password: 'provider@demo.com',
-  },
-  'admin@demo.com': {
-    id: 'u-admin',
-    name: 'Rahul Nair',
-    email: 'admin@demo.com',
-    phone: '+91 99887 76655',
-    role: 'ADMIN',
-    password: 'admin@demo.com',
-  },
-};
-
 const sleep = (min = 400, max = 800) =>
   new Promise((resolve) => {
     const timeout = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -358,90 +331,68 @@ const listings = [
   },
 ];
 
-const buildAuthResponse = (user) => ({
-  token: `mock-token-${user.id}-${Date.now()}`,
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-});
+const getStored = (key) => JSON.parse(localStorage.getItem(key) || '[]');
+const saveStored = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+const normalizeEmail = (email = '') => email.trim().toLowerCase();
+const persistedListingsKey = 'parkease_provider_listings';
+const bookingRequestsKey = 'parkease_booking_requests';
+
+const getAllListings = () => [
+  ...listings.map((listing) => ({
+    ...listing,
+    provider: {
+      ...listing.provider,
+      email: listing.provider.email || 'provider@demo.com',
+    },
+  })),
+  ...getStored(persistedListingsKey),
+];
 
 export const mockApi = {
-  async registerUser(payload) {
+  async updateAccount(payload) {
     await sleep();
-    const user = { ...payload, id: `u-${Date.now()}`, role: payload.role.toUpperCase() };
-    demoUsers[user.email] = user;
-    return buildAuthResponse(user);
+    const account = JSON.parse(localStorage.getItem('parkease_user') || 'null');
+    if (!account) {
+      throw new Error('No signed-in account is available to update.');
+    }
+
+    const updatedAccount = { ...account, ...payload };
+    localStorage.setItem('parkease_user', JSON.stringify(updatedAccount));
+    return updatedAccount;
   },
 
-  async loginUser(payload) {
+  async deleteAccount() {
     await sleep();
-    const user = demoUsers[payload.email.toLowerCase()];
-
-    if (!user || user.password !== payload.password) {
-      const error = new Error('Invalid email or password');
-      error.status = 401;
-      throw error;
-    }
-
-    return buildAuthResponse(user);
+    return { success: true };
   },
 
-  async verifyOtp(payload) {
+  async changePassword() {
     await sleep();
-    if (!payload.email || !payload.otp || payload.otp.length < 6) {
-      const error = new Error('OTP is invalid');
-      error.status = 400;
-      throw error;
-    }
-
-    return { success: true, message: 'OTP verified successfully' };
+    return { success: true };
   },
 
-  async forgotPassword(payload) {
+  async requestPasswordReset() {
     await sleep();
-    if (!payload.email) {
-      const error = new Error('Email is required');
-      error.status = 400;
-      throw error;
-    }
-
-    return { success: true, message: 'Password reset link sent' };
+    return { success: true };
   },
 
-  async resetPassword(payload) {
+  async verifyPasswordResetCode() {
     await sleep();
-    if (!payload.token || !payload.newPassword) {
-      const error = new Error('Token and new password are required');
-      error.status = 400;
-      throw error;
-    }
-
-    return { success: true, message: 'Password updated successfully' };
+    return { success: true };
   },
 
-  async getCurrentUser() {
+  async resetPassword() {
     await sleep();
-    const session = JSON.parse(localStorage.getItem('parkease_session') || 'null');
-    if (!session || !session.email) {
-      const error = new Error('User is not authenticated');
-      error.status = 401;
-      throw error;
-    }
-
-    const user = demoUsers[session.email.toLowerCase()];
-    if (!user) {
-      const error = new Error('Session not found');
-      error.status = 401;
-      throw error;
-    }
-
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
+    return { success: true };
   },
 
   async getPublicListings(params = {}) {
     await sleep();
-    const activeListings = listings.filter((listing) => listing.status === 'ACTIVE');
+    const location = String(params.location || '').trim().toLowerCase();
+    const activeListings = getAllListings().filter((listing) => {
+      const searchableText = `${listing.title} ${listing.address} ${listing.city}`.toLowerCase();
+      return listing.status === 'ACTIVE' && (!location || searchableText.includes(location));
+    });
     const page = Number(params.page || 1);
     const size = Number(params.size || 8);
     const start = (page - 1) * size;
@@ -454,9 +405,111 @@ export const mockApi = {
     };
   },
 
+  async getProviderListings(providerEmail) {
+    await sleep();
+    const email = normalizeEmail(providerEmail);
+    return getAllListings().filter((listing) => normalizeEmail(listing.provider?.email) === email);
+  },
+
+  async createProviderListing(payload, provider) {
+    await sleep();
+    const listing = {
+      id: `L-${Date.now()}`,
+      title: payload.title.trim(),
+      description: payload.description.trim(),
+      address: payload.address.trim(),
+      city: payload.city.trim(),
+      totalSlots: Number(payload.totalSlots),
+      vehicleTypes: payload.vehicleTypes,
+      pricePerHour: Number(payload.pricePerHour),
+      covered: Boolean(payload.covered),
+      evCharging: Boolean(payload.evCharging),
+      cctv: Boolean(payload.cctv),
+      is24x7: Boolean(payload.is24x7),
+      openTime: payload.openTime,
+      closeTime: payload.closeTime,
+      rules: [],
+      rating: 0,
+      reviewCount: 0,
+      status: 'ACTIVE',
+      provider: {
+        id: provider.email,
+        name: provider.name,
+        email: normalizeEmail(provider.email),
+      },
+    };
+    saveStored(persistedListingsKey, [...getStored(persistedListingsKey), listing]);
+    return listing;
+  },
+
+  async createBookingRequest(payload) {
+    await sleep();
+    const listing = getAllListings().find((item) => item.id === payload.listingId);
+    if (!listing) {
+      throw new Error('This parking offer is no longer available.');
+    }
+
+    const request = {
+      id: `BR-${Date.now()}`,
+      listingId: listing.id,
+      listingTitle: listing.title,
+      address: listing.address,
+      city: listing.city,
+      pricePerHour: listing.pricePerHour,
+      providerName: listing.provider.name,
+      providerEmail: normalizeEmail(listing.provider.email),
+      seekerName: payload.seekerName,
+      seekerEmail: normalizeEmail(payload.seekerEmail),
+      vehicleType: payload.vehicleType,
+      startAt: payload.startAt,
+      hours: Number(payload.hours),
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+    saveStored(bookingRequestsKey, [...getStored(bookingRequestsKey), request]);
+    return request;
+  },
+
+  async getProviderBookingRequests(providerEmail) {
+    await sleep();
+    const email = normalizeEmail(providerEmail);
+    return getStored(bookingRequestsKey)
+      .filter((request) => normalizeEmail(request.providerEmail) === email)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  async getSeekerBookingRequests(seekerEmail) {
+    await sleep();
+    const email = normalizeEmail(seekerEmail);
+    return getStored(bookingRequestsKey)
+      .filter((request) => normalizeEmail(request.seekerEmail) === email)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  async respondToBookingRequest(requestId, status, providerEmail) {
+    await sleep();
+    if (!['ACCEPTED', 'DECLINED'].includes(status)) {
+      throw new Error('Invalid booking request status.');
+    }
+
+    const requests = getStored(bookingRequestsKey);
+    const request = requests.find((item) => item.id === requestId);
+    if (!request || normalizeEmail(request.providerEmail) !== normalizeEmail(providerEmail)) {
+      throw new Error('Booking request not found for this provider.');
+    }
+    if (request.status !== 'PENDING') {
+      throw new Error('This booking request has already been answered.');
+    }
+
+    request.status = status;
+    request.respondedAt = new Date().toISOString();
+    saveStored(bookingRequestsKey, requests);
+    return request;
+  },
+
   async getListingById(id) {
     await sleep();
-    const listing = listings.find((item) => item.id === id);
+    const listing = getAllListings().find((item) => item.id === id);
     if (!listing) {
       const error = new Error('Listing not found');
       error.status = 404;

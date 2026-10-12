@@ -1,16 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LogIn, Menu, UserCircle2, X } from 'lucide-react';
+import { LogIn, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext.jsx';
 
 export default function PublicLayout() {
   const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    setOpen(false);
-  };
 
   return (
       <>
@@ -29,23 +22,11 @@ export default function PublicLayout() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            {user ? (
-              <>
-                <NavLink to={`/${user.role.toLowerCase()}`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:text-blue-700">
-                  <UserCircle2 size={16} />
-                  Dashboard
-                </NavLink>
-                <button onClick={handleLogout} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">Logout</button>
-              </>
-            ) : (
-              <>
-                <NavLink to="/login" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:text-blue-700">
-                  <LogIn size={16} />
-                  Login
-                </NavLink>
-                <NavLink to="/register" className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500">Register</NavLink>
-              </>
-            )}
+            <NavLink to="/login" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:text-blue-700">
+              <LogIn size={16} />
+              Login
+            </NavLink>
+            <NavLink to="/register" className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500">Register</NavLink>
           </div>  
               <button className="inline-flex rounded-full border border-slate-200 p-2 md:hidden" onClick={() => setOpen((value)=>!value)} aria-label="Toggle menu">
               {open ? <X size={20} /> : <Menu size={20} />}
@@ -64,17 +45,8 @@ export default function PublicLayout() {
               <NavLink to="/about" onClick={() => setOpen(false)}>About</NavLink>
               <NavLink to="/contact" onClick={() => setOpen(false)}>Contact</NavLink>
               <NavLink to="/faq" onClick={() => setOpen(false)}>FAQ</NavLink>
-              {user ? (
-                <>
-                  <NavLink to={`/${user.role.toLowerCase()}`} onClick={() => setOpen(false)}>Dashboard</NavLink>
-                  <button onClick={handleLogout} className="mt-2 rounded-full bg-slate-900 px-4 py-2 text-left text-sm font-medium text-white">Logout</button>
-                </>
-              ) : (
-                <>
-                  <NavLink to="/login" onClick={() => setOpen(false)}>Login</NavLink>
-                  <NavLink to="/register" onClick={() => setOpen(false)}>Register</NavLink>
-                </>
-              )}
+              <NavLink to="/login" onClick={() => setOpen(false)}>Login</NavLink>
+              <NavLink to="/register" onClick={() => setOpen(false)}>Register</NavLink>
             </div>
           </div>
         )}

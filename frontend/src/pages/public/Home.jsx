@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const featuredListings = [
   { id: 'L-101', title: 'Downtown Smart Parking', location: 'Madhapur', price: 45, rating: 4.7 },
@@ -13,6 +14,29 @@ const steps = [
 ];
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState('Madhapur, Hyderabad');
+  const [date, setDate] = useState('');
+  const [vehicle, setVehicle] = useState('Car');
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams({ location: location.trim(), vehicle });
+    if (date) params.set('date', date);
+
+    const role = localStorage.getItem('Role');
+    if (localStorage.getItem('Token') && role === 'SEEKER') {
+      navigate(`/seeker/search?${params.toString()}`);
+      return;
+    }
+
+    navigate('/login', {
+      state: {
+        returnTo: `/seeker/search?${params.toString()}`,
+      },
+    });
+  };
+
   return (
     <div>
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-sky-500 text-white">
@@ -23,7 +47,7 @@ export default function Home() {
             <p className="mt-5 max-w-xl text-base text-blue-50 md:text-lg">ParkEase connects drivers with verified parking spaces and helps hosts monetize unused spaces with zero friction.</p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link to="/search" className="rounded-full bg-white px-5 py-3 text-center border-white/40  bg-white/5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-slate-100">Search parking</Link>
+              <Link to="/seeker/search" className="rounded-full bg-white px-5 py-3 text-center border-white/40  bg-white/5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-slate-100">Search parking</Link>
               <Link to="/register" className="rounded-full border border-white/40 bg-white/5 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">List your space</Link>
             </div>
 
@@ -43,7 +67,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/30 bg-white/10 p-4 shadow-2xl backdrop-blur-md">
+          <div id="search" className="rounded-[2rem] border border-white/30 bg-white/10 p-4 shadow-2xl backdrop-blur-md">
             <div className="rounded-[1.5rem] bg-white p-5 text-slate-800">
               <div className="flex items-center justify-between">
                 <div>
@@ -53,27 +77,34 @@ export default function Home() {
                 <button className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Use my location</button>
               </div>
 
-              <div className="mt-5 space-y-4">
+              <form onSubmit={handleSearch} className="mt-5 space-y-4">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Where</label>
-                  <input className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none" value="Madhapur, Hyderabad" readOnly />
+                  <input
+                    className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none"
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    placeholder="Enter a neighborhood or city"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Date</label>
-                    <input type="date" className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none" defaultValue="2026-10-10" />
+                    <input type="date" min={new Date().toLocaleDateString('en-CA')} value={date} onChange={(event) => setDate(event.target.value)} className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none" />
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Vehicle</label>
-                    <select className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none">
+                    <select value={vehicle} onChange={(event) => setVehicle(event.target.value)} className="mt-2 w-full bg-transparent text-base font-medium text-slate-900 outline-none">
                       <option>Car</option>
                       <option>Bike</option>
                       <option>SUV</option>
+                      <option>Truck</option>
                     </select>
                   </div>
                 </div>
-                <button className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">Search spots</button>
-              </div>
+                <button type="submit" className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">Search spots</button>
+              </form>
             </div>
           </div>
         </div>
@@ -102,7 +133,7 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Featured parking</p>
               <h2 className="mt-3 text-3xl font-bold text-slate-900">Popular spots near you</h2>
             </div>
-            <Link to="/search" className="hidden text-sm font-semibold text-blue-700 md:inline-flex">View all</Link>
+            <Link to="/seeker/search" className="hidden text-sm font-semibold text-blue-700 md:inline-flex">View all</Link>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {featuredListings.map((listing) => (
